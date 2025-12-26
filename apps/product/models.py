@@ -15,3 +15,5 @@ class Product(models.Model):
     class Meta:
         db_table="inventory_product"
         indexes=[models.Index(fields=['user','-created_at'])]
+        onstraints=models.UniqueConstraint(fields=["user","sku"],name="unique_sku_per_user")
+
