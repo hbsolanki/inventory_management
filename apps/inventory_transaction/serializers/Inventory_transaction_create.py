@@ -36,17 +36,22 @@ class InventoryTransCreateSerializer(serializers.Serializer):
 
                 for item in items:
                     if item.get("productId") and item.get("quantity"):
-                        product=Product.objects.get(id=item.get("productId"))
+                        quantity=item.get("quantity")
+                        productId=item.get("quantity")
+                        product=Product.objects.get(id=productId)
 
                         if product:
+                            if action=="OUT" and quantity>product.stock_quantity:
+                                raise serializers.ValidationError({"quantity":f"Insufficient stock for product id-{productId} sku-{product.sku}"})
+        
                             if action=="OUT":
-                                product.stock_quantity-=item.get("quantity")
+                                product.stock_quantity-=quantity
                             else:
-                                product.stock_quantity+=item.get("quantity")
+                                product.stock_quantity+=quantity
 
                             product.save(update_fields=["stock_quantity"])
 
-                            InventoryTransactionItem.objects.create(transaction=curr_transaction,product=product,quantity=item.get("quantity"))
+                            InventoryTransactionItem.objects.create(transaction=curr_transaction,product=product,quantity=quantity)
 
         except Exception as e:
             raise serializers.ValidationError(e)
