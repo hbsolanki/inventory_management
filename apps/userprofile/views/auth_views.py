@@ -14,7 +14,6 @@ class RegisterView(APIView):
         serializer=UserProfileCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user=serializer.save()
-
         token=get_tokens_for_user(user)
 
         return Response({**token,"user":{"id":user.id,"username":user.username}},status=201)
@@ -34,7 +33,6 @@ class LoginView(APIView):
         user=authenticate(username=username,password=password)
         if not user : 
             return Response({"error":"Invalid Credentials"},status=401)
-        
         token=get_tokens_for_user(user)
 
         return Response({**token,"user":{"id":user.id,"username":user.username}})
