@@ -11,10 +11,19 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env.read_env(BASE_DIR / ".env")
+DEBUG = env('DEBUG')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -41,7 +50,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'apps.userprofile',
     'apps.product',
-    'apps.inventory_transaction'
+    'apps.inventory_transaction',
+    "corsheaders"
 ]
 
 REST_FRAMEWORK = { 
@@ -56,6 +66,7 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -63,6 +74,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CORS_ALLOWED_ORIGINS =[
+    "http://localhost:5173"
+]
 ROOT_URLCONF = 'inventory_management.urls'
 
 TEMPLATES = [
@@ -88,12 +102,15 @@ WSGI_APPLICATION = 'inventory_management.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("db_name"),
+        "USER": env("db_user"),
+        "PASSWORD": env("db_pass"),
+        "HOST": env("db_host"),
+        "PORT":env("db_port"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
