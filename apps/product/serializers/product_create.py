@@ -8,3 +8,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         model=Product
         fields=["id","sku","name","description"]
         
+
+    def validate_sku(self, value):
+        if Product.objects.filter(sku=value).exists():
+            raise serializers.ValidationError("SKU already Exist!!")
+        
+        return value
