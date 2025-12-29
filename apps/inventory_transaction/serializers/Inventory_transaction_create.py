@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 from ..models import InventoryTransaction,InventoryTransactionItem
 from ...product.models import Product
+from django.core.cache import cache
 
 class InventoryTransItemSerializer(serializers.Serializer):
     productId=serializers.IntegerField(required=True)
@@ -33,7 +34,7 @@ class InventoryTransCreateSerializer(serializers.Serializer):
                     action=action,
                     description=description      
                 )
-
+                cache.delete(f"product:list:{user.id}")
                 for item in items:
                     if item.get("productId") and item.get("quantity"):
                         quantity=item.get("quantity")
@@ -48,7 +49,7 @@ class InventoryTransCreateSerializer(serializers.Serializer):
                                 product.stock_quantity+=quantity
 
                             product.save(update_fields=["stock_quantity"])
-
+                            cache.delete(f"product:{user.id}:{product.id}")
                             InventoryTransactionItem.objects.create(transaction=curr_transaction,product=product,quantity=quantity)
 
         except serializers.ValidationError:
