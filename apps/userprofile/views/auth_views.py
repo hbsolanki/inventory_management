@@ -3,8 +3,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from django.contrib.auth import authenticate
-from ..serializers.UserCreate import UserProfileCreateSerializer
-from ..services.auth_service import get_tokens_for_user
+from apps.userprofile.serializers.UserCreate import UserProfileCreateSerializer
+from apps.userprofile.services.auth_service import get_tokens_for_user
 
 
 class RegisterView(APIView):

@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from .serializers import product_create,product_read,product_update
 from .models import Product
 from django.core.cache import cache
+from .services.product_service import delete_cache_inventory
 
 
 class ProductViewSet(ModelViewSet):
@@ -13,6 +14,14 @@ class ProductViewSet(ModelViewSet):
 
     def get_queryset(self):
         return Product.objects.filter(user=self.request.user)
+    
+    def get_serializer_class(self):
+        if self.action == "create":
+            return product_create.ProductCreateSerializer
+        elif self.action=="partial_update":
+            return product_update.ProductUpdateSerializer
+        
+        return product_read.ProductReadSerializer
     
     def list(self, request, *args, **kwargs):
         cache_key=f"product:list:{self.request.user.id}"
@@ -38,30 +47,14 @@ class ProductViewSet(ModelViewSet):
         cache.set(cache_key,serializer.data,timeout=180)
         return Response(serializer.data)
     
-    def get_serializer_class(self):
-        if self.action == "create":
-            return product_create.ProductCreateSerializer
-        elif self.action=="partial_update":
-            return product_update.ProductUpdateSerializer
-        
-        return product_read.ProductReadSerializer
-    
     def perform_update(self, serializer):
         product = serializer.save()
-        user_id = product.user.id
-
-        cache.delete(f"product:list:{user_id}")
-        cache.delete(f"product:{user_id}:{product.id}")
+        delete_cache_inventory(userId=product.user.id,productId=product.id)
         
     def perform_destroy(self, instance):
-        user_id = instance.user.id
-
-        cache.delete(f"product:list:{user_id}")
-        cache.delete(f"product:{user_id}:{instance.id}")
-
+        delete_cache_inventory(userId=instance.user.id,productId=instance.id)
         instance.delete()
-
     
     def perform_create(self, serializer):
         product = serializer.save(user=self.request.user)
-        cache.delete(f"product:list:{product.user.id}")
+        delete_cache_inventory(userId=product.user.id)
