@@ -1,8 +1,4 @@
 from rest_framework import serializers
-from django.db import transaction
-from ..models import InventoryTransaction,InventoryTransactionItem
-from ...product.models import Product
-from django.core.cache import cache
 
 class InventoryTransItemSerializer(serializers.Serializer):
     productId=serializers.IntegerField(required=True)
@@ -18,48 +14,4 @@ class InventoryTransCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("At least one item is required")
         
         return items
-
-
-
-    def create(self, validated_data):
-        user=self.context.get("user")
-        items=validated_data.get("items")
-        action=validated_data.get("action")
-        description=validated_data.get("description","")
-
-        try:
-            with transaction.atomic():
-                curr_transaction=InventoryTransaction.objects.create(
-                    user=user,
-                    action=action,
-                    description=description      
-                )
-                cache.delete(f"product:list:{user.id}")
-                for item in items:
-                    if item.get("productId") and item.get("quantity"):
-                        quantity=item.get("quantity")
-                        productId=item.get("productId")
-                        product=Product.objects.get(id=productId,user=user)
-                        if product:
-                            if action=="OUT" and quantity>product.stock_quantity:
-                                raise serializers.ValidationError({"items": [{"productId": productId,"quantity": f"Insufficient stock for sku {product.sku}"}]})
-                            if action=="OUT":
-                                product.stock_quantity-=quantity
-                            else:
-                                product.stock_quantity+=quantity
-
-                            product.save(update_fields=["stock_quantity"])
-                            cache.delete(f"product:{user.id}:{product.id}")
-                            InventoryTransactionItem.objects.create(transaction=curr_transaction,product=product,quantity=quantity)
-
-        except serializers.ValidationError:
-            raise
-        except Exception as e:
-            raise serializers.ValidationError(e)
-
-
-        return curr_transaction
-            
-
-        
 

@@ -1,8 +1,8 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from ..models import UserProfile
-from ..serializers import UserRead,UserUpdate
+from apps.userprofile.models import UserProfile
+from apps.userprofile.serializers import UserRead,UserUpdate
 from django.core.cache import cache
 
 
@@ -12,6 +12,12 @@ class UserProfileViewSet(ModelViewSet):
 
     def get_queryset(self):
         return UserProfile.objects.filter(id=self.request.user.id)
+    
+    def get_serializer_class(self):
+        if self.action=="partial_update":
+            return UserUpdate.UserUpdateSerializer
+        
+        return UserRead.UserReadSerializer
 
     def retrieve(self, request, *args, **kwargs):
         cache_key=f"user:{self.request.user.id}"
@@ -23,12 +29,4 @@ class UserProfileViewSet(ModelViewSet):
         serializer=self.get_serializer(dataset)
         cache.set(cache_key,serializer.data,timeout=180)
         return Response(serializer.data)
-
-    def get_serializer_class(self):
-        if self.action=="partial_update":
-            return UserUpdate.UserUpdateSerializer
-        
-        return UserRead.UserReadSerializer
-
-
-
+    
