@@ -2,22 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
+from rest_framework import status
 from django.contrib.auth import authenticate
-from apps.userprofile.serializers.UserCreate import UserProfileCreateSerializer
+from apps.userprofile.serializers.UserLogin import UserLoginSerializer
 from apps.userprofile.services.auth_service import get_tokens_for_user
-
-
-class RegisterView(APIView):
-    permission_classes=[AllowAny]
-
-    def post(self,request):
-        serializer=UserProfileCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user=serializer.save()
-        token=get_tokens_for_user(user)
-
-        return Response({**token,"user":{"id":user.id,"username":user.username}},status=201)
-
 
 class LoginThrottle(AnonRateThrottle):
     rate='5/min'
@@ -28,11 +16,14 @@ class LoginView(APIView):
     throttle_classes=[LoginThrottle]
 
     def post(self,request):
-        username=request.data.get("username")
-        password=request.data.get("password")
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data["username"]
+        password = serializer.validated_data["password"]
         user=authenticate(username=username,password=password)
         if not user : 
-            return Response({"error":"Invalid Credentials"},status=401)
+            return Response({"error":"Invalid Credentials"},status=status.HTTP_401_UNAUTHORIZED)
         token=get_tokens_for_user(user)
 
         return Response({**token,"user":{"id":user.id,"username":user.username}})

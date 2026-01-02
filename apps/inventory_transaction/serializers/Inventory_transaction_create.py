@@ -6,7 +6,7 @@ class InventoryTransItemSerializer(serializers.Serializer):
 
 class InventoryTransCreateSerializer(serializers.Serializer):
     action=serializers.ChoiceField(choices=["IN","OUT"])
-    description=serializers.CharField(required=False)
+    description=serializers.CharField(required=True)
     items=InventoryTransItemSerializer(many=True)
 
     def validate_item(self,items):

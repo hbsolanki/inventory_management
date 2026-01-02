@@ -5,6 +5,6 @@ class ProductReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model=Product
-        fields=["id","sku","name","description","stock_quantity","created_at"]
+        fields=["id","sku","name","description","stock_quantity","created_at","created_by","updated_at","updated_by"]
         
         
