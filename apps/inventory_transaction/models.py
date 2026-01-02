@@ -1,6 +1,7 @@
 from django.db import models
-from ..userprofile.models import UserProfile
+from ..organization.models import Organization
 from ..product.models import Product
+from ..userprofile.models import UserProfile
 
 
 class InventoryTransaction(models.Model):
@@ -11,8 +12,13 @@ class InventoryTransaction(models.Model):
 
     action=models.CharField(max_length=10,choices=action_types)
     description=models.CharField(max_length=200)
-    user=models.ForeignKey(UserProfile,on_delete=models.CASCADE,related_name="inventory_transactions")
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,related_name="inventory_transactions")
     created_at=models.DateTimeField(auto_now_add=True)
+    created_by=models.ForeignKey(to=UserProfile,on_delete=models.SET_NULL,related_name="inventory_created",null=True,blank=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by=models.ForeignKey(to=UserProfile,on_delete=models.SET_NULL,related_name="inventory_updated",null=True,blank=True)
+
+
 
     class Meta:
         db_table="inventory_transaction"

@@ -1,19 +1,20 @@
 from django.db import transaction
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from ..models import InventoryTransaction,InventoryTransactionItem
 from ...product.models import Product
 from django.core.cache import cache
 
 
 @transaction.atomic
-def create_inventory_transaction(*,user,action,description,items):
+def create_inventory_transaction(*,organization,action,description,items,user):
     curr_transaction=InventoryTransaction.objects.create(
-        user=user,
+        organization=organization,
         action=action,
         description=description,
+        created_by=user,
     )
 
-    products=Product.objects.select_for_update().filter(id__in=[item["productId"] for item in items],user=user)
+    products=Product.objects.select_for_update().filter(id__in=[item["productId"] for item in items],organization=organization)
 
     Product_dict={product.id:product for product in products}
 
@@ -35,13 +36,13 @@ def create_inventory_transaction(*,user,action,description,items):
         product.save(update_fields=["stock_quantity"])
 
         InventoryTransactionItem.objects.create(transaction=curr_transaction,product=product,quantity=quantity)
-        cache.delete(f"product:{user.id}:{product.id}")
+        cache.delete(f"product:{organization.id}:{product.id}")
 
-        delete_cache_inventory(user=user)
+        delete_cache_inventory(organization=organization)
     return curr_transaction
 
 
-def delete_cache_inventory(*,user):
-    cache.delete(f"product:list:{user.id}")
+def delete_cache_inventory(*,organization):
+    cache.delete(f"product:list:{organization}")
 
 
