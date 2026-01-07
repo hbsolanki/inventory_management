@@ -37,6 +37,7 @@ class UserProfileViewSet(ModelViewSet):
             return UserProfile.objects.filter(organization=user.organization)
         if user.role==UserProfile.ROLE_MANAGER:
             return UserProfile.objects.filter(organization=user.organization,role=UserProfile.ROLE_EMPLOYEE)
+        print(user.id)
         return UserProfile.objects.filter(id=user.id)
     
     @action(detail=False,methods=["POST"],url_path="create/manager",permission_classes=[IsAdmin])

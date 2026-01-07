@@ -6,11 +6,16 @@ from django.core.cache import cache
 from .serializers import product_create,product_read,product_update
 from .models import Product
 from .services.product_service import delete_cache_inventory
-from apps.permission.organization import IsAdmin,IsManagerOrAdmin,IsManager,IsEmployee
-import datetime
-
+from apps.permission.organization import IsManagerOrAdmin
+from .filters import ProductFilter
+from .core.pagination import  ProductPagination
+from django_filters.rest_framework import DjangoFilterBackend
 
 class ProductViewSet(ModelViewSet):
+    filter_backends = [DjangoFilterBackend]
+    pagination_class=ProductPagination
+    filterset_class=ProductFilter
+
 
     def get_queryset(self):
         return Product.objects.filter(organization=self.request.user.organization)
@@ -34,11 +39,18 @@ class ProductViewSet(ModelViewSet):
         if data :
             return Response(data)
         
-        products_data=self.get_queryset()
-        serializer=product_read.ProductReadSerializer(products_data,many=True)
-       
-        cache.set(cache_key,serializer.data,timeout=180)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        products_data=self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(products_data)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            # cache.set(cache_key, response.data, timeout=180)
+            return response
+
+        serializer = self.get_serializer(products_data, many=True)
+        cache.set(cache_key, serializer.data, timeout=180)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     def retrieve(self, request, *args, **kwargs):
         productId=kwargs.get("pk")
